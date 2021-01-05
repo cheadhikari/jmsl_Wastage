@@ -37,6 +37,39 @@ sap.ui.define([
 			return oItem;
 		},
 
+		_isLastItem: function(oField) {
+
+			var aSegments = oField.split("-");
+
+			if (!aSegments) {
+				return false;
+			}
+
+			var iNextIndex = parseInt(aSegments[4], 10) + 1;
+			var sNextFocus = aSegments[0] + "-" + aSegments[1] + "--" + aSegments[3] + "-" + iNextIndex;
+			var oInput = sap.ui.getCore().getElementById(sNextFocus);
+
+			if (oInput) {
+				return false;
+			}
+
+			return true;
+		},
+
+		_addItem: function() {
+
+			var oTable = this.byId("tabLineItems");
+			var oModel = oTable.getModel("liModel");
+			var aItems = oModel.getData();
+
+			var oItem = this._getItem();
+			aItems.push(oItem);
+
+			oModel.setData(aItems);
+			oModel.refresh();
+
+		},
+
 		_initItems: function(oEvent) {
 
 			var oTable = this.byId("tabLineItems");
@@ -242,11 +275,25 @@ sap.ui.define([
 			this._clearBlankItems(oData);
 
 			if (oData.length === 0) {
+				MessageBox.error(this._geti18nText("msgENoItems"));
 				return false;
 			}
 
+			var sMessage;
 			for (var i = 0; i < oData.length; i++) {
-				if (oData[i].ArtStatus === "E" || oData[i].QtyStatus === "E" || oData[i].RsnStatus === "E") {
+				if (oData[i].ArtStatus === "E") {
+					sMessage = this._geti18nText("msgEIncorrectArticleLineNo") + " " + (i + 1);
+					MessageBox.error(sMessage);
+					return false;
+				}
+				if (oData[i].QtyStatus === "E") {
+					sMessage = this._geti18nText("msgEIncorrectQuantityLineNo") + " " + (i + 1);
+					MessageBox.error(sMessage);
+					return false;
+				}
+				if (oData[i].RsnStatus === "E") {
+					sMessage = this._geti18nText("msgESelectValidReason") + " " + (i + 1);
+					MessageBox.error(sMessage);
 					return false;
 				}
 			}
@@ -368,14 +415,7 @@ sap.ui.define([
 
 		onRowAdd: function(oEvent) {
 
-			var oTable = this.byId("tabLineItems");
-			var oModel = oTable.getModel("liModel");
-			var aItems = oModel.getData();
-
-			var oItem = this._getItem();
-			aItems.push(oItem);
-
-			oModel.setData(aItems);
+			this._addItem();
 
 		},
 
@@ -412,6 +452,7 @@ sap.ui.define([
 		onMoveReasChange: function(oEvent) {
 
 			var oItem = oEvent.getSource();
+			var sCurrentFocus = oItem.getId();
 			var oContext = oItem.getBindingContext("liModel");
 			var oTable = this.byId("tabLineItems");
 			var oliModel = oTable.getModel("liModel");
@@ -423,6 +464,10 @@ sap.ui.define([
 
 			var oInput = sap.ui.getCore().getElementById(oItem.getId());
 			this._setInputState(oInput, "None", "");
+
+			if (this._isLastItem(sCurrentFocus)) {
+				this._addItem();
+			}
 
 		},
 
@@ -452,8 +497,6 @@ sap.ui.define([
 
 			if (this._validateLineItems(aData)) {
 				this._postMatDoc(this._pSite, this._pLocation, oModel, aData);
-			} else {
-				MessageBox.error(this._geti18nText("msgEFixErrors"));
 			}
 
 			oliModel.refresh();
