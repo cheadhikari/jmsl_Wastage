@@ -76,7 +76,7 @@ sap.ui.define([
 
 			var aItems = [];
 
-			for (var i = 0; i < 1; i++) {
+			for (var i = 0; i < 20; i++) {
 				var oItem = this._getItem();
 				aItems.push(oItem);
 			}
